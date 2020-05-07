@@ -4,7 +4,7 @@ layout: default
 
 ## Usage
 
-The **LOGS.BAT** file will automatically prompt for Local Admin Privileges and run a newly created PS1 script via -ExecutionPolicy Bypass.
+The **ESUCHK.BAT** file will automatically prompt for Local Admin Privileges and run a newly created PS1 script via -ExecutionPolicy Bypass.
 
 **Right Click** the above **.bat** link and choose Save As or **Save Link As**:
 ![SaveAs](https://raw.githubusercontent.com/johnem-msft/ESUCHK/master/assets/images/saveas.png)
@@ -23,193 +23,223 @@ Set-ExecutionPolicy Unrestricted
 
 ## Details
 
-> Latest Version is 1.6.3<br>
-> Project migrated from Technet Gallery on 5/2020 due to site retirement<br>
-> <a href="https://docs.microsoft.com/en-us/teamblog/technet-gallery-retirement">TechNet Gallery Retirement</a>
+> Latest Version is v0.92<br>
+> This Batch File/PowerShell Script is for Windows 7 Only<br>
+> ESU Scenario Reference <a href="http://aka.ms/Windows7ESU">aka.ms/Windows7ESU</a>
 
-#### Collection Methods
+#### Errors & Redirection:
 
-- We now have the option to run collections independently – By default EventSearch, SetupDiag, Windows Update, Network Diagnostics, PowerCFG, GPResult and Misc Collections are all checked to be collected – so there is no need to modify the check-boxes unless you only want to collect a single group of logs
+- ESUCHK will automatically check for Windows 7 requirements to apply ESU/Extended Security Updates IPK & ATO codes
 
-- TOP-ERRORS.TXT will also now also open in a GUI Out-Gridview allowing filtering if you choose the option (unchecked by default):
-  - Choose which logs to collect:
-  - ![LOGSgui](https://raw.githubusercontent.com/johnem-msft/ESUCHK/master/assets/images/logsgui.png)
-  - ![outGridView](https://raw.githubusercontent.com/johnem-msft/ESUCHK/master/assets/images/outgridview.png)
-    - Full filtering options in Out-GridView are also available:
-	- ![filterGridView](https://raw.githubusercontent.com/johnem-msft/ESUCHK/master/assets/images/logsgui/master/assets/images/filtergridview.png)
-
-- Additional Helper Files & collections:
-  - All files are written to %temp%\LOGS\GPRESULT
-    - This location should be zipped after collection, expect .log/.txt to compress 90%
-  - TOP-ERRORS.TXT contains a count of duplicated errors against a given day - this can help to spot certain scenarios but will also include false positives
-  - WER-SUMMARY.TXT contains a count of all Windows Error Reports queried from C:\Users\All Users\Microsoft\Windows\WER\ReportArchive\
-  -DXDiag, MSINFO32, CBS, DISM and Windows Update Logs are all collected
-    - Get-WindowsUpdateLog is executed and parsed ETL files are written to Windows-Update.log
-  - All *EVTX Logs containing "error" or "fail" are collected in the /EVTX/ folder by default
-  - Setupdiage.exe will download and run by default unless you uncheck it
-    - Setupdiag.exe will run as a job and should take less than 10 minutes - after 10 minutes the collection for this task will abort
-	- Utilize this collection for Setup, In-Place and Feature Upgrade scenarios only - logs: SetupDiag-Log.zip & SetupDiag*.log
-  - NOTE: Additional separate setup collections exist in /SETUP/ w/ SETUP-OOBE & SetupAct-Regex.TXT helper files
-  - /Network/ folder contains basic queries against SMB information, proxy info and WLAN Reports
-  - /POWER/ folder contains basic POWERCFG and Sleep-Study queries
-
+- If you do not have Service Pack 1 Installed or an applicable update you will see a message as follows:
+  - SP1: Error - Please install Win7 Service Pack 1
+  - ![ErrorRedirect](https://raw.githubusercontent.com/johnem-msft/ESUCHK/master/assets/images/errorredirect.png)
+  - Please install the update mentioned in the web redirect and run the script to check again
+  
+- When all prerequisites are successfully met you will be presented with a GUI where you can Enter your ESU PK
+  - ![filterGridView](https://raw.githubusercontent.com/johnem-msft/ESUCHK/master/assets/images/logsgui/master/assets/images/pidgui.png)
+  - Enter your PK and select your year and choose OK (Year 1 is selected by default)
+  
+- slmgr.vbs will automatically be queried for /IPK and /ATO commands
+  - slmgt.vbs will issue a success after successfully processing these commands
+  - ![slmgrSucess](https://raw.githubusercontent.com/johnem-msft/ESUCHK/master/assets/images/logsgui/master/assets/images/success.png)
 
 ### Scripts
 
 #### Batch Wrapper
 
 ```batch
-@echo ####LOGSv.1.6.3 BAT-WRAPPER#####  
-SET ScriptDirectory=%~dp0 
-CD /D %ScriptDirectory% 
-type LOGS.BAT > LOGS_.PS1 
-MORE /E +10 %ScriptDirectory%LOGS_.PS1 > %ScriptDirectory%LOGS.PS1 
+@echo #####ESUCHKv0.92 BAT-WRAPPER#####  
+SET ScriptDirectory=%~dp0
+CD /D %ScriptDirectory%
+type ESUCHK.BAT > ESUCHK_.PS1
+MORE /E +10 %ScriptDirectory%ESUCHK_.PS1 > %ScriptDirectory%ESUCHK.PS1
  
-SET PowerShellScriptPath=%ScriptDirectory%LOGS.PS1 
+SET PowerShellScriptPath=%ScriptDirectory%ESUCHK.PS1
 PowerShell -NoProfile -ExecutionPolicy Bypass -Command "& {Start-Process PowerShell -ArgumentList '-NoProfile -ExecutionPolicy Bypass -File ""%PowerShellScriptPath%""' -Verb RunAs}"; 
-PAUSE 
+PAUSE
 ```
 
 #### PowerShell Script
 
 ```powershell
-####LOGS.PS1 v.1.6.3#####  
-## PLEASE RUN THIS SCRIPT IN POWERSHELL ISE AS AN ADMINISTRATOR  
-## REMEMBER TO >> > > SET-EXECUTIONPOLICY UNRESTRICTED < < <<   
-  
-###  Changes in 1.6.3: 
-###  Added DISM /Online /Get-Packages to Installed_Updates.TXT 
-###  Added miglog.xml, *APPRAISER*.xml to /SETUP/ Collection 
-###  Added /Windows/Minidump/*.DMP to DMP collection  
-  
+### ESU-CHECK ###
+$global:esuVer = "ESU-CHECK v0.91"
+Write-Host "`n"
+Write-Host "#### ", "$esuVer", " ###", "`n"
 
-  
-        ## Misc Logs Collection: #7        
-        if($Global:miscCollect -eq $True)  
-            {  
-            getMSINFO #function & job  
-                wh "...`n"  
-            PrinterCheck #function  
-                wh "...`n"  
-            getProcesses #function  
-                wh "...`n"  
-            getApps #function - make job - takes a min  
-                wh "...`n"  
-            SetupLogs #function  
-                wh "...`n"       
-            sysProductCheck #function  
-                wh "...`n"                 
-            reservedCheck #function  
-                wh "...`n"  
-            fltmcCheck #function  
-                wh "...`n"  
-            getDXDiag #function  
-                wh "...`n"  
-            regLang #function  
-                wh "...`n"  
-            autoRotate #function  
-            getMISCLogs #function  
-                wh "...`n"  
-            getDrivers #function  
-                wh "...`n"   
-            getAV #function  
-                wh "...`n"            
-             }  
-        
-  
-#### RECEIVING JOBS SECTION ###...   
-  
-        #EventSearchJob  
-        if($Global:EventsCollect -eq $True)  
-        {          
-            wh "`nWaiting for EventSearchJob to complete...`n"  
-  
-            Receive-Job -Name EventSearchJob -OutVariable eventSearch -Wait   
-            $search = $eventSearch.Line  
-        }  
-  
-  
-        if($Global:SetupDiagCollect -eq $True)  
-        {  
-            #SetupDiagJob - Receive-Job  
-            $stamp = (Get-Date -format "hh:mm tt")  
-            wh "`nWaiting for SetupDiagJob to complete..."  
-            wh "`nTime Stamp: $stamp"  
-            wh "`nThis can take up to 10 minutes ..."  
-  
-            Do{  
-              SLEEP 15  
-                wh "."  
-                if((Get-Job -name SetupDiagJob).State -eq "Completed")  
-                    { Receive-Job -Name SetupDiagJob  
-                           wh "`nSetupDiag Completed!"                         
-                        Break                      }  
-                                }Until($Cancel.SetupDiag -eq $True)  
-            wh `n  
-                                               
-            #Receive file and copy  
-            Receive-Job -Name SetupDiagJob -Wait   
-            Copy-Item $tempDir\Logs*.zip $tempDir\LOGS\SetupDiag-Log.zip  
-            Copy-Item $tempDir\setupdiag*.log $tempDir\LOGS\  
-            Remove-Item $tempDir\Logs*.zip  
-        }  
-  
-       
-        if($Global:UpdatesCollect -eq $True)  
-        {  
-            #GetUpdates Job via:  
-            #UpdateHelper <--- GetUpdates Job has to finish first!  
-            #Checking Status of GetUpdates Job...  
-            wh "Checking Status of GetUpdates Job...`n"  
-            If ((Get-Job -Name GetUpdates).State -eq "Failed")  
-                { wh "`nGetUpdates Job Failed!`n" }  
-                    Else{  
-                            Receive-Job -Name GetUpdates -wait  
-                            Move $env:USERPROFILE\Desktop\WindowsUpdate.log $TempDir\LOGS\Windows-Update.log -Force  
-                            wh "`n Writing Update Helper Info to UPDATE-ERRORS.TXT ... `n"  
-                            UpdateHelper #run the update helper function  
-                        }               
-        } #End getting GetUpdates-job       
-  
-        #Finishing EventSearch  
-        if($Global:EventsCollect -eq $True)  
-            {  
-                writeSearch #function  
-            }  
-  
-#Wait on MSINFO...  
-if($Global:miscCollect -eq $True)  
-{  
-    wh "`n Waiting for MSINFO32 to Complete ...`n"  
-    do{ start-sleep 1 }  
-    Until((get-process | select-string -Pattern "msinfo").Pattern -cne "msinfo")  
-        werHint #function  
-}  
-  
-  
-if((Get-Host).Version.Major -cge 5) ##WIN7 Does not Support Transcript  
-    {  
-  
-Stop-Transcript   
-  
-        do{  
-    start-sleep 1  
-    }  
-    Until((get-item $tempDir\LOGS\Event-Search.TXT).Length -cne 0)  
+###start transcript###
+if($host.name.Contains("Console")){Start-Transcript $env:Temp\ESU-Check.TXT}
+
+###sp1Check###
+function sp1Check
+{
+   $winVersion = Get-WmiObject Win32_OperatingSystem
+   Write-Host "WinVersion:", $winVersion.version
+   if($winVersion.BuildNumber -ige 7601){ Write-Host "SP1: OK!" 
+        $global:sp1Check = 1}
+        Else{ Write-Host "SP1: Error - Please install Win7 Service Pack 1" -BackgroundColor Red -ForegroundColor White
+                Write-Host "https://www.microsoft.com/en-us/download/details.aspx?id=5842"
+                    Start-Sleep 5
+                    CMD.EXE /c "`"C:\Program Files (x86)\Internet Explorer\iexplore.exe`" https://www.microsoft.com/en-us/download/details.aspx?id=5842"
+                    BREAK }
+}##\\sp1Check##
+     
+###ssuANDshaCheck###
+function ssuANDshaCheck
+{    
+    # Get Architecture #
+    $winVersion = Get-WmiObject Win32_OperatingSystem
+    
+    # Checking for updates #
+    Write-Host "Checking for updates, this may take a few minutes ..."
+    $updates = Get-WMIObject win32_quickfixengineering
+    $updates > $env:Temp\ESU-Updates-Check.TXT
+    
+    # Checking for KB4490628 #
+    $checkKB4490628 = $updates | Select-String "4490628"
+    if($checkKB4490628.Matches.Length -gt 0){ Write-Host "KB4490628: OK!"}
+        Else{
+            # Bit check # 
+            if($winVersion.OSArchitecture -eq "64-bit")
+                            {Write-Host "Missing KB4490628 - 64-bit OS" Red -ForegroundColor White
+                            Start-Sleep 5
+                            CMD.EXE /c "`"C:\Program Files (x86)\Internet Explorer\iexplore.exe`" https://www.catalog.update.microsoft.com/Search.aspx?q=KB4490628%20x64"
+                            BREAK}
+            Elseif($winVersion.OSArchitecture -eq "32-bit")
+                            {Write-Host "Missing KB4490628 - 32-bit OS" Red -ForegroundColor White
+                            Start-Sleep 5
+                            CMD.EXE /c "`"C:\Program Files (x86)\Internet Explorer\iexplore.exe`" https://www.catalog.update.microsoft.com/Search.aspx?q=KB4490628%20x86"
+                            BREAK}}
+                            
+    # Checking for KB4474419 #                        
+    $checkKB4474419 = $updates | Select-String "4474419"
+    if($checkKB4474419.Matches.Length -gt 0){ Write-Host "KB4474419: OK!"
+        $global:ssuANDshaCheck = 1}
+         Else{
+            # Bit check # 
+            if($winVersion.OSArchitecture -eq "64-bit")
+                            {Write-Host "Missing KB4474419 - 64-bit OS" Red -ForegroundColor White
+                            Start-Sleep 5
+                            CMD.EXE /c "`"C:\Program Files (x86)\Internet Explorer\iexplore.exe`" https://www.catalog.update.microsoft.com/Search.aspx?q=Windows%207%20KB4474419%20x64"
+                            BREAK}
+            Elseif($winVersion.OSArchitecture -eq "32-bit")
+                            {Write-Host "Missing KB4474419 - 32-bit OS" Red -ForegroundColor White
+                            Start-Sleep 5
+                            CMD.EXE /c "`"C:\Program Files (x86)\Internet Explorer\iexplore.exe`" https://www.catalog.update.microsoft.com/Search.aspx?q=Windows%207%20KB4474419%20x86"
+                            BREAK}}
+            
+}##\\ssuANDshaCheck##
+
+
+### ipkBox ###
+Function ipkBox
+{
+
+    Add-Type -AssemblyName System.Windows.Forms
+    Add-Type -AssemblyName System.Drawing
+
+    $global:form = New-Object System.Windows.Forms.Form
+    $global:form.Text = "$esuVer"
+    $global:form.Size = New-Object System.Drawing.Size(350, 200)
+    $global:form.StartPosition = 'CenterScreen'
+
+    $OKButton = New-Object System.Windows.Forms.Button  
+    $OKButton.Location = New-Object System.Drawing.Point(125,100)  
+    $OKButton.Size = New-Object System.Drawing.Size(75,23)  
+    $OKButton.Text = 'OK'  
+    $OKButton.DialogResult = [System.Windows.Forms.DialogResult]::OK  
+    $global:form.AcceptButton = $OKButton  
+    $global:form.Controls.Add($OKButton)
+
+    $keyBox = New-Object System.Windows.Forms.TextBox
+    $keyBox.Location = New-Object System.Drawing.Point(65,47)
+    $keyBox.Size = New-Object System.Drawing.Size(200)
+    $keyBox.Text = 'Enter Key...'
+    $global:form.Controls.Add($keyBox)
+    
+    $comboBox = New-Object System.Windows.Forms.ComboBox
+    $comboBox.Location = New-Object System.Drawing.Point(65, 70)
+    $comboBox.Size = New-Object System.Drawing.Size(200)
+    $comboBox.Text = "Year 1"
+    $boxAnswers = @("Year 1", "Year 2", "Year 3")
+    $comboBox.Items.AddRange($boxAnswers)
+    $global:form.Controls.Add($comboBox)
+    
+    $link = New-Object System.Windows.Forms.LinkLabel
+    $link.Location = New-Object System.Drawing.Point(90, 140)
+    $link.Size = New-Object System.Drawing.Size(220, 20)
+    $link.Text = 'https://aka.ms/Windows7ESU'
+    $global:form.Controls.Add($link)
+    $link.add_LinkClicked(
+        {CMD.EXE /c "`"C:\Program Files (x86)\Internet Explorer\iexplore.exe`" https://aka.ms/Windows7ESU"})
+
+    $mainText = New-Object System.Windows.Forms.Label  
+    $mainText.Location = New-Object System.Drawing.Point(65,20)  
+    $mainText.Size = New-Object System.Drawing.Size(220, 20)  
+    $mainText.Text = 'Enter your Windows 7 ESU Product Key:'  
+    $global:form.Controls.Add($mainText)  
+    $result = $Global:form.ShowDialog()  
+    SLEEP 1  #testing Topmost lag  
+    $global:form.Topmost = $true  
+    
+
+    
       
-    }  
-  
-wh "`nLog Collection Completed! `nLogs are available in %temp%\LOGS\`n"    
-wh "`nHit Any Key or Close ...`n"  
-  
-Start-Sleep 1  
-  
-Start Explorer.exe $explore  
-  
-PAUSE  
-  
-## LOGS.PS1 1.6.3  ##     
-## JOHNEM 8-2019 ##   
-## EOF ##
+    #OK Button ...   
+    if($result -eq [System.Windows.Forms.DialogResult]::OK)  
+    {  
+        $global:key = $keyBox.Text  
+        $global:box = $comboBox.SelectedItem
+    }
+    Else{Write-Host "Aborted..."; BREAK}              
+
+}
+
+### boxCheck ###
+Function boxCheck
+{
+    if($box -eq $null)
+    {$global:ActID = "77db037b-95c3-48d7-a3ab-a9c6d41093e0"}
+        Else{
+                if($box.Contains(1))
+                {$global:ActID = "77db037b-95c3-48d7-a3ab-a9c6d41093e0"}
+                    elseif($box.Contains(2))
+                    {$global:ActID = "0e00c25d-8795-4fb7-9572-3803d91b6880"}
+                        elseif($box.Contains(3))
+                        {$global:ActID = "4220f546-f522-46df-8202-4d07afd26454"}
+            }
+}##//boxCheck##
+
+
+## MAIN ##
+
+## perform checks ##
+sp1Check
+ssuANDshaCheck
+
+## IPK & ATO ##
+if(($sp1Check + $ssuAndshaCheck) -eq 2)
+    {              
+        ipkBox
+    }
+    
+Write-Host "Key Entered = ", $key
+
+## slmgr commands and year selection check ##
+slmgr.vbs /IPK $key
+boxCheck
+Start-Sleep 5
+Write-Host "Activation ID Selected = ", $ActID
+slmgr.vbs /ATO $ActID
+
+###stop transcript###
+if($host.name.Contains("Console")){Stop-Transcript}
+
+## pause ##
+Write-Host "Hit any Key to Exit..."
+cmd /c pause | out-null
+
+## EOF JohnEM 2020 ##
 ```
 

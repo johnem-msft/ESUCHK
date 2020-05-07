@@ -9,7 +9,7 @@ PowerShell -NoProfile -ExecutionPolicy Bypass -Command "& {Start-Process PowerSh
 PAUSE
 
 ### ESU-CHECK ###
-$global:esuVer = "ESU-CHECK v.91"
+$global:esuVer = "ESU-CHECK v0.91"
 Write-Host "`n"
 Write-Host "#### ", "$esuVer", " ###", "`n"
 
