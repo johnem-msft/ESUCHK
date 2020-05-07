@@ -1,0 +1,5 @@
+title: Windows 7 ESU Check
+description: ESUCHK.BAT allows you to quickly check requirements for Windows 7 ESU and apply Key parameters via OSPP.vbs through PowerShell
+show_downloads: true
+google_analytics:
+theme: jekyll-theme-slate
