@@ -33,16 +33,16 @@ Set-ExecutionPolicy Unrestricted
 
 - If you do not have Service Pack 1 Installed or an applicable update you will see a message as follows:
   - SP1: Error - Please install Win7 Service Pack 1
-  - ![ErrorRedirect](https://raw.githubusercontent.com/johnem-msft/ESUCHK/master/assets/images/errorredirect.png)
+![ErrorRedirect](https://raw.githubusercontent.com/johnem-msft/ESUCHK/master/assets/images/errorredirect.png)
   - Please install the update mentioned in the web redirect and run the script to check again
   
 - When all prerequisites are successfully met you will be presented with a GUI where you can Enter your ESU PK
-  - ![filterGridView](https://raw.githubusercontent.com/johnem-msft/ESUCHK/master/assets/images/pidgui.png)
+![filterGridView](https://raw.githubusercontent.com/johnem-msft/ESUCHK/master/assets/images/pidgui.png)
   - Enter your PK and select your year and choose OK (Year 1 is selected by default)
   
 - slmgr.vbs will automatically be queried for /IPK and /ATO commands
   - slmgt.vbs will issue a success after successfully processing these commands
-  - ![slmgrSucess](https://raw.githubusercontent.com/johnem-msft/ESUCHK/master/assets/images/success.png)
+![slmgrSucess](https://raw.githubusercontent.com/johnem-msft/ESUCHK/master/assets/images/success.png)
 
 ### Scripts
 
