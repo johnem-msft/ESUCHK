@@ -25,7 +25,7 @@ Set-ExecutionPolicy Unrestricted
 
 > Latest Version is v0.92<br>
 > This Batch File/PowerShell Script is for Windows 7 Only<br>
-> ESU Scenario Reference <a href="http://aka.ms/Windows7ESU">aka.ms/Windows7ESU</a>
+> ESU Scenario Reference: <a href="http://aka.ms/Windows7ESU">aka.ms/Windows7ESU</a>
 
 #### Errors & Redirection:
 
@@ -37,12 +37,12 @@ Set-ExecutionPolicy Unrestricted
   - Please install the update mentioned in the web redirect and run the script to check again
   
 - When all prerequisites are successfully met you will be presented with a GUI where you can Enter your ESU PK
-  - ![filterGridView](https://raw.githubusercontent.com/johnem-msft/ESUCHK/master/assets/images/logsgui/master/assets/images/pidgui.png)
+  - ![filterGridView](https://raw.githubusercontent.com/johnem-msft/ESUCHK/master/assets/images/pidgui.png)
   - Enter your PK and select your year and choose OK (Year 1 is selected by default)
   
 - slmgr.vbs will automatically be queried for /IPK and /ATO commands
   - slmgt.vbs will issue a success after successfully processing these commands
-  - ![slmgrSucess](https://raw.githubusercontent.com/johnem-msft/ESUCHK/master/assets/images/logsgui/master/assets/images/success.png)
+  - ![slmgrSucess](https://raw.githubusercontent.com/johnem-msft/ESUCHK/master/assets/images/success.png)
 
 ### Scripts
 
