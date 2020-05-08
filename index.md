@@ -62,66 +62,6 @@ PAUSE
 
 #### PowerShell Script
 
-<div class="accordion" id="myaccordion">
-
-  <div class="card">
-    <div class="card-header" id="headingOne">
-      <h5 class="mb-0">
-        <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-          Collapse Title
-        </button>
-      </h5>
-    </div>
-    <div id="collapseOne" class="collapse" aria-labelledby="headingOne" data-parent="#myaccordion">
-      <div class="card-body">
-        ```powershell
-		### ESU-CHECK ###
-		$global:esuVer = "ESU-CHECK v0.91"
-		Write-Host "`n"
-		Write-Host "#### ", "$esuVer", " ###", "`n"
-
-		###start transcript###
-		if($host.name.Contains("Console")){Start-Transcript $env:Temp\ESU-Check.TXT}
-
-		###sp1Check###
-		function sp1Check
-		{
-		   $winVersion = Get-WmiObject Win32_OperatingSystem
-		   Write-Host "WinVersion:", $winVersion.version
-		   if($winVersion.BuildNumber -ige 7601){ Write-Host "SP1: OK!" 
-				$global:sp1Check = 1}
-				Else{ Write-Host "SP1: Error - Please install Win7 Service Pack 1" -BackgroundColor Red -ForegroundColor White
-						Write-Host "https://www.microsoft.com/en-us/download/details.aspx?id=5842"
-							Start-Sleep 5
-							CMD.EXE /c "`"C:\Program Files (x86)\Internet Explorer\iexplore.exe`" https://www.microsoft.com/en-us/download/details.aspx?id=5842"
-							BREAK }
-		}##\\sp1Check##
-		...
-		```
-			  </div>
-			</div>
-		  </div>
-			<!--
-			...
-			-->
-
-  <div class="card">
-    <div class="card-header" id="headingN">
-      <h5 class="mb-0">
-        <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapseN" aria-expanded="false" aria-controls="collapseN">
-          Another Collapse Title
-        </button>
-      </h5>
-    </div>
-    <div id="collapseN" class="collapse" aria-labelledby="headingN" data-parent="#myaccordion">
-      <div class="card-body">
-        More collapsible content
-      </div>
-    </div>
- </div>
-
-</div>
-
 ```powershell
 ### ESU-CHECK ###
 $global:esuVer = "ESU-CHECK v0.91"
