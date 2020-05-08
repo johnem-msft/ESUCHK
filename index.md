@@ -13,7 +13,7 @@ Once the file has saved locally open it: ![OpenFile](https://raw.githubuserconte
 
 Accept User Account Control options to run the according PowerShell script with full execution rights.
 
-**Note**: if you experience any issue running the .bat file, you are able to run the PS1 file in PowerShell ISE as an Administrator after running the command:<br>
+**Note**: if you experience any issue running the .bat file, you are able to run the PS1 script in PowerShell ISE as an Administrator just choose the ps1 link above and remember to set proper execution rights via:<br>
 Set-ExecutionPolicy Unrestricted
 
 
@@ -29,11 +29,11 @@ Set-ExecutionPolicy Unrestricted
 
 - If you do not have an update installed which is needed you will see an error indicating the update which is needed:
 
-![ErrorRedirect](https://raw.githubusercontent.com/johnem-msft/ESUCHK/master/assets/images/kb4538483.png.png)
+![ErrorRedirect](https://raw.githubusercontent.com/johnem-msft/ESUCHK/master/assets/images/kb4538483.png)
   - Please install the update mentioned in the web redirect and run the script to check again
-  - As seen iin the the above example, you will often be directed to the Windows Update Catalog from the main KB artilce, be sure to pick the correct version of Windows and architecture when downloading (32bit vs. 64bit)
+  - As seen iin the the above example, you will often be directed to the Windows Update Catalog from the main KB article, be sure to pick the correct version of Windows and architecture when downloading (32bit vs. 64bit)
   
-- When all prerequisites are successfully met you will be presented with a GUI where you can Enter your ESU PK
+- If all prerequisites are successfully met you will be presented with a GUI where you can Enter your ESU PK
 
 ![filterGridView](https://raw.githubusercontent.com/johnem-msft/ESUCHK/master/assets/images/pidgui.png)
   - Enter your PK and select your year and choose OK (Year 1 is selected by default)
@@ -41,7 +41,7 @@ Set-ExecutionPolicy Unrestricted
 - slmgr.vbs will automatically be queried for /IPK and /ATO commands
 
 ![slmgrSucess](https://raw.githubusercontent.com/johnem-msft/ESUCHK/master/assets/images/success.png)
-  - slmgr.vbs will issue a success after successfully processing these commands
+  - slmgr.vbs will confirm a success after successfully processing these commands with a valid ESU Key
 
   
 ### Scripts
