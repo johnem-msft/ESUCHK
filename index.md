@@ -41,7 +41,7 @@ Set-ExecutionPolicy Unrestricted
   
 - slmgr.vbs will automatically be queried for /IPK and /ATO commands
 ![slmgrSucess](https://raw.githubusercontent.com/johnem-msft/ESUCHK/master/assets/images/success.png)
-  - slmgt.vbs will issue a success after successfully processing these commands
+  - slmgr.vbs will issue a success after successfully processing these commands
 
   
 ### Scripts
