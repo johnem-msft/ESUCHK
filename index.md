@@ -11,10 +11,6 @@ The **ESUCHK.BAT** file will automatically prompt for Local Admin Privileges and
 
 Once the file has saved locally open it: ![OpenFile](https://raw.githubusercontent.com/johnem-msft/ESUCHK/master/assets/images/openfile.png)
 
-When attempting to run  the .bat file you may be prompted by Smart Screen Filter in Windows
-![MoreInfo](https://raw.githubusercontent.com/johnem-msft/ESUCHK/master/assets/images/moreruncombo.png)<br>
-Choose: **More info** and then **Run anyway**
-
 Accept User Account Control options to run the according PowerShell script with full execution rights.
 
 **Note**: if you experience any issue running the .bat file, you are able to run the PS1 file in PowerShell ISE as an Administrator after running the command:<br>
@@ -31,10 +27,11 @@ Set-ExecutionPolicy Unrestricted
 
 - ESUCHK will automatically check for Windows 7 requirements to apply ESU/Extended Security Updates IPK & ATO codes
 
-- If you do not have Service Pack 1 Installed or an applicable update you will see a message as follows: SP1: Error - Please install Win7 Service Pack 1
+- If you do not have an update installed which is needed you will see an error indicating the update which is needed:
 
-![ErrorRedirect](https://raw.githubusercontent.com/johnem-msft/ESUCHK/master/assets/images/errorredirect.png)
+![ErrorRedirect](https://raw.githubusercontent.com/johnem-msft/ESUCHK/master/assets/images/kb4538483.png.png)
   - Please install the update mentioned in the web redirect and run the script to check again
+  - As seen iin the the above example, you will often be directed to the Windows Update Catalog from the main KB artilce, be sure to pick the correct version of Windows and architecture when downloading (32bit vs. 64bit)
   
 - When all prerequisites are successfully met you will be presented with a GUI where you can Enter your ESU PK
 
@@ -67,73 +64,57 @@ PAUSE
 
 ```powershell
 ### ESU-CHECK ###
-$global:esuVer = "ESU-CHECK v0.91"
+$global:esuVer = "ESU-CHECK v.92"
 Write-Host "`n"
 Write-Host "#### ", "$esuVer", " ###", "`n"
 
 ###start transcript###
 if($host.name.Contains("Console")){Start-Transcript $env:Temp\ESU-Check.TXT}
 
+
 ###sp1Check###
 function sp1Check
 {
-   $winVersion = Get-WmiObject Win32_OperatingSystem
+   $global:winVersion = Get-WmiObject Win32_OperatingSystem
    Write-Host "WinVersion:", $winVersion.version
    if($winVersion.BuildNumber -ige 7601){ Write-Host "SP1: OK!" 
         $global:sp1Check = 1}
-        Else{ Write-Host "SP1: Error - Please install Win7 Service Pack 1" -BackgroundColor Red -ForegroundColor White
+        Else{ Write-Host "SP1: Error - Please install Win7 Service Pack 1", $winversion.OSArchitecture -BackgroundColor Red -ForegroundColor White
                 Write-Host "https://www.microsoft.com/en-us/download/details.aspx?id=5842"
                     Start-Sleep 5
                     CMD.EXE /c "`"C:\Program Files (x86)\Internet Explorer\iexplore.exe`" https://www.microsoft.com/en-us/download/details.aspx?id=5842"
                     BREAK }
 }##\\sp1Check##
-     
-###ssuANDshaCheck###
-function ssuANDshaCheck
-{    
-    # Get Architecture #
-    $winVersion = Get-WmiObject Win32_OperatingSystem
-    
-    # Checking for updates #
-    Write-Host "Checking for updates, this may take a few minutes ..."
-    $updates = Get-WMIObject win32_quickfixengineering
-    $updates > $env:Temp\ESU-Updates-Check.TXT
-    
-    # Checking for KB4490628 #
-    $checkKB4490628 = $updates | Select-String "4490628"
-    if($checkKB4490628.Matches.Length -gt 0){ Write-Host "KB4490628: OK!"}
-        Else{
-            # Bit check # 
-            if($winVersion.OSArchitecture -eq "64-bit")
-                            {Write-Host "Missing KB4490628 - 64-bit OS" Red -ForegroundColor White
-                            Start-Sleep 5
-                            CMD.EXE /c "`"C:\Program Files (x86)\Internet Explorer\iexplore.exe`" https://www.catalog.update.microsoft.com/Search.aspx?q=KB4490628%20x64"
-                            BREAK}
-            Elseif($winVersion.OSArchitecture -eq "32-bit")
-                            {Write-Host "Missing KB4490628 - 32-bit OS" Red -ForegroundColor White
-                            Start-Sleep 5
-                            CMD.EXE /c "`"C:\Program Files (x86)\Internet Explorer\iexplore.exe`" https://www.catalog.update.microsoft.com/Search.aspx?q=KB4490628%20x86"
-                            BREAK}}
-                            
-    # Checking for KB4474419 #                        
-    $checkKB4474419 = $updates | Select-String "4474419"
-    if($checkKB4474419.Matches.Length -gt 0){ Write-Host "KB4474419: OK!"
-        $global:ssuANDshaCheck = 1}
-         Else{
-            # Bit check # 
-            if($winVersion.OSArchitecture -eq "64-bit")
-                            {Write-Host "Missing KB4474419 - 64-bit OS" Red -ForegroundColor White
-                            Start-Sleep 5
-                            CMD.EXE /c "`"C:\Program Files (x86)\Internet Explorer\iexplore.exe`" https://www.catalog.update.microsoft.com/Search.aspx?q=Windows%207%20KB4474419%20x64"
-                            BREAK}
-            Elseif($winVersion.OSArchitecture -eq "32-bit")
-                            {Write-Host "Missing KB4474419 - 32-bit OS" Red -ForegroundColor White
-                            Start-Sleep 5
-                            CMD.EXE /c "`"C:\Program Files (x86)\Internet Explorer\iexplore.exe`" https://www.catalog.update.microsoft.com/Search.aspx?q=Windows%207%20KB4474419%20x86"
-                            BREAK}}
-            
-}##\\ssuANDshaCheck##
+   
 
+# Querying installed updates #
+function updateQuery
+{      
+    Write-Host "Checking for updates, this may take a few minutes ..." -nonewline
+    $global:updates = Get-WMIObject win32_quickfixengineering
+    $global:updates > $env:Temp\ESU-Updates-Check.TXT
+    Write-Host "Done!"
+                                    
+}##\\updateQuery##
+
+
+# Checking specific updates #
+function updateCheck
+{
+    Param([parameter(Mandatory = $true)][string]$kbnum)
+    
+    $check = $updates | Select-string $kbnum
+    if($check.Matches.Length -gt 0){ Write-Host "KB", $kbnum, ": OK!" }
+    Else{
+            Write-Host "Missing KB", $kbnum, ": Please install this KB to continue - Reboot Required after install" -BackgroundColor Red -ForegroundColor White
+            Write-Host "http://support.microsoft.com/kb/$kbnum", $winversion.OSArchitecture
+            SLEEP 5
+            CMD /c "`"C:\Program Files (x86)\Internet Explorer\iexplore.exe`" http://support.microsoft.com/kb/$kbnum"
+            $global:preReq = $false
+            BREAK
+        }     
+}##//updateCheck##
+    
 
 ### ipkBox ###
 Function ipkBox
@@ -217,27 +198,34 @@ Function boxCheck
 
 ## MAIN ##
 
+# list of KBs to check
+$kbs = @( "4490628",
+          "4474419",
+          "4538483")
+
 ## perform checks ##
 sp1Check
-ssuANDshaCheck
+updateQuery
 
-## IPK & ATO ##
-if(($sp1Check + $ssuAndshaCheck) -eq 2)
-    {              
-        ipkBox
-    }
-    
-Write-Host "Key Entered = ", $key
+foreach($kb in $kbs){updateCheck $kb}
 
-## slmgr commands and year selection check ##
-slmgr.vbs /IPK $key
-boxCheck
-Start-Sleep 5
-Write-Host "Activation ID Selected = ", $ActID
-slmgr.vbs /ATO $ActID
+if($preReq -ne $false)
+{
+    ## IPK & ATO ##
+    ipkBox
+        
+    Write-Host "Key Entered = ", $key
 
-###stop transcript###
-if($host.name.Contains("Console")){Stop-Transcript}
+    ## slmgr commands and year selection check ##
+    slmgr.vbs /IPK $key
+    boxCheck
+    Start-Sleep 5
+    Write-Host "Activation ID Selected = ", $ActID
+    slmgr.vbs /ATO $ActID
+
+    ###stop transcript###
+    if($host.name.Contains("Console")){Stop-Transcript}
+}
 
 ## pause ##
 Write-Host "Hit any Key to Exit..."
