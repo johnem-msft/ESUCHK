@@ -1,6 +1,4 @@
----
-layout: default
----
+From: http://aka.ms/esuchk
 
 ## Usage
 
